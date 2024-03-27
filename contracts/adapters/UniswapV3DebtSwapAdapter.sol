@@ -23,6 +23,7 @@ import {PercentageMath} from "../libraries/math/PercentageMath.sol";
 import {BendProtocolDataProvider} from "../misc/BendProtocolDataProvider.sol";
 
 import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
+import {ISwapRouter02} from "./interfaces/ISwapRouter02.sol";
 
 /**
  * @title UniswapV3DebtSwapAdapter
@@ -51,7 +52,8 @@ contract UniswapV3DebtSwapAdapter is
   ILendPoolLoan public bendLendLoan;
   IReserveOracleGetter public bendReserveOracle;
   BendProtocolDataProvider public bendDataProvider;
-  ISwapRouter public swapRouter;
+  ISwapRouter public swapRouter; // obselete
+  ISwapRouter02 public swapRouter02;
 
   function initialize(
     address aaveAddressesProvider_,
@@ -81,6 +83,14 @@ contract UniswapV3DebtSwapAdapter is
     } else {
       _unpause();
     }
+  }
+
+  function setSwapRouter(address router) public onlyOwner {
+    swapRouter = ISwapRouter(router);
+  }
+
+  function setSwapRouter02(address router02) public onlyOwner {
+    swapRouter02 = ISwapRouter02(router02);
   }
 
   struct SwapParams {
@@ -335,14 +345,13 @@ contract UniswapV3DebtSwapAdapter is
     require(vars.fromBorrower == vars.toBorrower, "U3DSA: invalid borrower after borrow new debt");
 
     // swap new debt to old debt
-    IERC20Upgradeable(vars.toDebtReserve).safeApprove(address(swapRouter), vars.toDebtAmount);
-    uint256 amountOut = swapRouter.exactInputSingle(
-      ISwapRouter.ExactInputSingleParams({
+    IERC20Upgradeable(vars.toDebtReserve).safeApprove(address(swapRouter02), vars.toDebtAmount);
+    uint256 amountOut = swapRouter02.exactInputSingle(
+      ISwapRouter02.ExactInputSingleParams({
         tokenIn: vars.toDebtReserve,
         tokenOut: vars.fromDebtReserve,
         fee: uint24(execOpVars.uniswapFee), // 0.3% tier is 3000, 0.01% tier is 100
         recipient: address(this),
-        deadline: block.timestamp,
         amountIn: vars.toDebtAmount,
         amountOutMinimum: vars.fromDebtWithFeeAmount,
         sqrtPriceLimitX96: 0

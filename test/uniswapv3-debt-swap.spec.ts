@@ -22,6 +22,8 @@ import {
   MockAaveLendPoolFactory,
   MockUniswapV3SwapRouter,
   MockUniswapV3SwapRouterFactory,
+  MockUniswapV3SwapRouter02,
+  MockUniswapV3SwapRouter02Factory,
   UniswapV3DebtSwapAdapter,
   UniswapV3DebtSwapAdapterFactory,
 } from "../types";
@@ -33,6 +35,7 @@ makeSuite("Adapter: Uniswap v3 debt swap test cases", (testEnv: TestEnv) => {
   let mockAaveAddressProvider: MockAaveLendPoolAddressesProvider;
   let mockAavePool: MockAaveLendPool;
   let mockUniswapV3SwapRouter: MockUniswapV3SwapRouter;
+  let mockUniswapV3SwapRouter02: MockUniswapV3SwapRouter02;
   let debtSwapAdapter: UniswapV3DebtSwapAdapter;
 
   let testTokenId1: string;
@@ -55,6 +58,7 @@ makeSuite("Adapter: Uniswap v3 debt swap test cases", (testEnv: TestEnv) => {
     mockAavePool = await new MockAaveLendPoolFactory(testEnv.deployer.signer).deploy();
     await waitForTx(await mockAaveAddressProvider.setLendingPool(mockAavePool.address));
     mockUniswapV3SwapRouter = await new MockUniswapV3SwapRouterFactory(testEnv.deployer.signer).deploy();
+    mockUniswapV3SwapRouter02 = await new MockUniswapV3SwapRouter02Factory(testEnv.deployer.signer).deploy();
 
     debtSwapAdapter = await new UniswapV3DebtSwapAdapterFactory(testEnv.deployer.signer).deploy();
     await waitForTx(
@@ -64,6 +68,7 @@ makeSuite("Adapter: Uniswap v3 debt swap test cases", (testEnv: TestEnv) => {
         mockUniswapV3SwapRouter.address
       )
     );
+    await waitForTx(await debtSwapAdapter.setSwapRouter02(mockUniswapV3SwapRouter02.address));
 
     testTokenId1 = (testEnv.tokenIdTracker++).toString();
     testTokenId2 = (testEnv.tokenIdTracker++).toString();
@@ -85,20 +90,20 @@ makeSuite("Adapter: Uniswap v3 debt swap test cases", (testEnv: TestEnv) => {
     await waitForTx(await testEnv.weth.connect(user0.signer).mint(wethAmount));
     await waitForTx(await testEnv.weth.connect(user0.signer).transfer(mockAavePool.address, wethAmount.div(2)));
     await waitForTx(
-      await testEnv.weth.connect(user0.signer).transfer(mockUniswapV3SwapRouter.address, wethAmount.div(2))
+      await testEnv.weth.connect(user0.signer).transfer(mockUniswapV3SwapRouter02.address, wethAmount.div(2))
     );
     console.log("mockAavePool WETH:", await testEnv.weth.balanceOf(mockAavePool.address));
-    console.log("mockUniswapV3SwapRouter WETH:", await testEnv.weth.balanceOf(mockUniswapV3SwapRouter.address));
+    console.log("mockUniswapV3SwapRouter WETH:", await testEnv.weth.balanceOf(mockUniswapV3SwapRouter02.address));
 
     // mint some USDC
     const usdcAmount = await convertToCurrencyDecimals(testEnv.usdc.address, "200000");
     await waitForTx(await testEnv.usdc.connect(user0.signer).mint(usdcAmount));
     await waitForTx(await testEnv.usdc.connect(user0.signer).transfer(mockAavePool.address, usdcAmount.div(2)));
     await waitForTx(
-      await testEnv.usdc.connect(user0.signer).transfer(mockUniswapV3SwapRouter.address, usdcAmount.div(2))
+      await testEnv.usdc.connect(user0.signer).transfer(mockUniswapV3SwapRouter02.address, usdcAmount.div(2))
     );
     console.log("mockAavePool USDC:", await testEnv.usdc.balanceOf(mockAavePool.address));
-    console.log("mockUniswapV3SwapRouter USDC:", await testEnv.usdc.balanceOf(mockUniswapV3SwapRouter.address));
+    console.log("mockUniswapV3SwapRouter USDC:", await testEnv.usdc.balanceOf(mockUniswapV3SwapRouter02.address));
   });
 
   it("User 1 deposits WETH and USDC", async () => {
@@ -204,7 +209,7 @@ makeSuite("Adapter: Uniswap v3 debt swap test cases", (testEnv: TestEnv) => {
     const { users, bayc, usdc } = testEnv;
     const borrower = users[2];
 
-    await waitForTx(await mockUniswapV3SwapRouter.setSmountOutDeltaRatio(101));
+    await waitForTx(await mockUniswapV3SwapRouter02.setSmountOutDeltaRatio(101));
     const wethBalanceBeforeSwap = await testEnv.weth.balanceOf(borrower.address);
 
     const debtSwapOutAmount = await debtSwapAdapter.getNftDebtSwapOutAmount(
@@ -235,7 +240,7 @@ makeSuite("Adapter: Uniswap v3 debt swap test cases", (testEnv: TestEnv) => {
     const wethBalanceAfterSwap = await testEnv.weth.balanceOf(borrower.address);
     expect(wethBalanceAfterSwap).to.be.gt(wethBalanceBeforeSwap, "weth balance should be increased");
 
-    await waitForTx(await mockUniswapV3SwapRouter.setSmountOutDeltaRatio(0));
+    await waitForTx(await mockUniswapV3SwapRouter02.setSmountOutDeltaRatio(0));
   });
 
   it("user 2 repay all USDC, full of borrow amount", async () => {

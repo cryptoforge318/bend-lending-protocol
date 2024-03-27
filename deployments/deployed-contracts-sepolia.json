@@ -137,11 +137,10 @@
     "deployer": "0xafF5C36642385b6c7Aaf7585eC785aB2316b5db6"
   },
   "UniswapV3DebtSwapAdapterImpl": {
-    "address": "0xF08f40fa0312B23C31C4b027F26fDbc95Bcd7781"
+    "address": "0x2CF1D659a9821A36114BB086dd178934EFE9592f"
   },
   "UniswapV3DebtSwapAdapter": {
-    "address": "0x3ea00A4A0E4Ba9a549304C5681988c5bb04dEfBe",
-    "deployer": "0xafF5C36642385b6c7Aaf7585eC785aB2316b5db6"
+    "address": "0x3ea00A4A0E4Ba9a549304C5681988c5bb04dEfBe"
   },
   "WstETHPriceAggregator": {
     "address": "0xf8c43C594826A778026c0e32ca6c3A300E122cb3",
